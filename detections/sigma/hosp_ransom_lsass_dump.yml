@@ -1,0 +1,31 @@
+title: Hospital Ransomware - LSASS Memory Dump via comsvcs or ProcDump
+id: 827a9288-2a0a-4090-bab8-451be803321a
+status: experimental
+description: |
+  Detects dumping of LSASS process memory with the built-in comsvcs.dll MiniDump export or Sysinternals
+  ProcDump. Stolen domain credentials let operators reach every ward workstation and server.
+  Used by 4 of the 5 reference actors (ATT&CK T1003.001).
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+author: Stelios Partsinevelos
+date: 2026-11-21
+tags:
+  - attack.credential-access
+  - attack.t1003.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_comsvcs:
+    Image|endswith: '\rundll32.exe'
+    CommandLine|contains|all:
+      - 'comsvcs'
+      - 'minidump'
+  selection_procdump:
+    CommandLine|contains|all:
+      - ' -ma '
+      - 'lsass'
+  condition: 1 of selection_*
+falsepositives:
+  - Authorised troubleshooting by Microsoft support (should be ticketed and rare)
+level: critical

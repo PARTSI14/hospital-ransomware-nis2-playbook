@@ -1,0 +1,35 @@
+title: Hospital Ransomware - Windows Event Log Cleared via Command Line
+id: c7d70eb8-fd0d-4cb6-986b-8645f8f18760
+status: experimental
+description: |
+  Detects clearing of Windows event logs with wevtutil or PowerShell. Operators wipe logs to slow the
+  investigation, and it removes evidence the hospital needs for the NIS2 final report (root cause).
+  ATT&CK v20 T1685.005 Clear Windows Event Logs (formerly T1070.001).
+references:
+  - https://attack.mitre.org/techniques/T1685/005/
+author: Stelios Partsinevelos
+date: 2026-11-21
+tags:
+  - attack.defense-impairment
+  - attack.t1685.005
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_wevtutil:
+    Image|endswith: '\wevtutil.exe'
+    CommandLine|contains:
+      - ' cl '
+      - ' clear-log '
+  selection_powershell:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains:
+      - 'Clear-EventLog'
+      - 'Remove-EventLog'
+      - 'Limit-EventLog'
+  condition: 1 of selection_*
+falsepositives:
+  - Rare administrative clean-up on lab or imaging machines
+level: high

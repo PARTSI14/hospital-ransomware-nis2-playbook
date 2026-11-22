@@ -1,0 +1,55 @@
+title: Hospital Ransomware - Shadow Copy or Backup Catalog Deletion
+id: 08c26b20-72d0-49b9-9b3e-9c99fb6702bf
+status: experimental
+description: |
+  Detects deletion of Volume Shadow Copies, the Windows backup catalog or boot recovery settings.
+  Ransomware operators do this minutes before encryption so the hospital cannot roll back.
+  Used by 4 of the 5 healthcare-targeting reference actors (ATT&CK T1490). Treat as a last-chance tripwire:
+  page the on-call responder and isolate the host immediately.
+references:
+  - https://attack.mitre.org/techniques/T1490/
+author: Stelios Partsinevelos
+date: 2026-11-21
+tags:
+  - attack.impact
+  - attack.t1490
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_vssadmin:
+    Image|endswith: '\vssadmin.exe'
+    CommandLine|contains|all:
+      - 'delete'
+      - 'shadows'
+  selection_vssadmin_resize:
+    Image|endswith: '\vssadmin.exe'
+    CommandLine|contains|all:
+      - 'resize'
+      - 'shadowstorage'
+  selection_wmic:
+    Image|endswith: '\wmic.exe'
+    CommandLine|contains|all:
+      - 'shadowcopy'
+      - 'delete'
+  selection_wbadmin:
+    Image|endswith: '\wbadmin.exe'
+    CommandLine|contains:
+      - 'delete catalog'
+      - 'delete systemstatebackup'
+  selection_bcdedit:
+    Image|endswith: '\bcdedit.exe'
+    CommandLine|contains:
+      - 'recoveryenabled no'
+      - 'bootstatuspolicy ignoreallfailures'
+  selection_powershell:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - 'Win32_ShadowCopy'
+      - 'Delete'
+  condition: 1 of selection_*
+falsepositives:
+  - Backup software or administrators managing shadow storage (rare on clinical workstations; tune by host group)
+level: critical

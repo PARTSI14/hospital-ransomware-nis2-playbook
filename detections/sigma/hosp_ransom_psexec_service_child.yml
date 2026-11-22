@@ -1,0 +1,35 @@
+title: Hospital Ransomware - Command Run Through PsExec Service
+id: 0474c090-b6e5-4e77-a356-a2487c7dee09
+status: experimental
+description: |
+  Detects a shell or script host launched by the PsExec service (PSEXESVC) or a renamed copy dropped in
+  ADMIN$. Operators use PsExec over SMB to push the encryptor to many hosts at once.
+  ATT&CK T1569.002 Service Execution and T1021.002 SMB/Windows Admin Shares (3 of 5 reference actors each).
+references:
+  - https://attack.mitre.org/techniques/T1569/002/
+  - https://attack.mitre.org/techniques/T1021/002/
+author: Stelios Partsinevelos
+date: 2026-11-21
+tags:
+  - attack.execution
+  - attack.t1569.002
+  - attack.lateral-movement
+  - attack.t1021.002
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent:
+    ParentImage|endswith: '\PSEXESVC.exe'
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\rundll32.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+  condition: all of selection_*
+falsepositives:
+  - IT teams that still use PsExec for software deployment (baseline the admin hosts and accounts)
+level: high

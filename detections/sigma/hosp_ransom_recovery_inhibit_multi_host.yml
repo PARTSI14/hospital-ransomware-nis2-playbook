@@ -1,0 +1,49 @@
+title: Hospital Ransomware - Recovery Inhibition on Many Hosts (Base)
+id: 6d3f3f0e-2b7e-4c55-9a39-1d6a1d2b7a11
+name: hosp_ransom_recovery_inhibit_base
+status: experimental
+description: Base rule for the correlation below - shadow copy deletion by vssadmin or wmic.
+author: Stelios Partsinevelos
+date: 2026-11-21
+tags:
+  - attack.impact
+  - attack.t1490
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_vssadmin:
+    Image|endswith: '\vssadmin.exe'
+    CommandLine|contains|all:
+      - 'delete'
+      - 'shadows'
+  selection_wmic:
+    Image|endswith: '\wmic.exe'
+    CommandLine|contains|all:
+      - 'shadowcopy'
+      - 'delete'
+  condition: 1 of selection_*
+falsepositives:
+  - See correlation rule
+level: high
+---
+title: Hospital Ransomware - Mass Deployment (Shadow Copies Deleted on 3+ Hosts in 10 Minutes)
+id: 9609eea1-b4b7-4b0b-b632-0c0e43e78cb7
+status: experimental
+description: |
+  Fires when shadow copies are deleted on three or more different hosts within ten minutes. One host can be
+  an admin mistake; several at once means the encryptor is being pushed across the network. This is the
+  trigger for the network-wide containment decision in the playbook (Phase 3).
+author: Stelios Partsinevelos
+date: 2026-11-21
+correlation:
+  type: value_count
+  rules:
+    - hosp_ransom_recovery_inhibit_base
+  timespan: 10m
+  condition:
+    field: Computer
+    gte: 3
+falsepositives:
+  - None expected
+level: critical

@@ -1,0 +1,51 @@
+title: Hospital Ransomware - Backup, Security or Database Services Stopped
+id: b2a58266-7950-479e-a183-48ce5d88ed0f
+status: experimental
+description: |
+  Detects net, sc or taskkill being used to stop backup agents, security tools or database engines.
+  Encryptors stop SQL Server and backup services so database files (EHR, LIS, PACS indexes) are unlocked
+  and can be encrypted. ATT&CK T1489 Service Stop and T1685 Disable or Modify Tools.
+references:
+  - https://attack.mitre.org/techniques/T1489/
+  - https://attack.mitre.org/techniques/T1685/
+author: Stelios Partsinevelos
+date: 2026-11-21
+tags:
+  - attack.impact
+  - attack.t1489
+  - attack.defense-impairment
+  - attack.t1685
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_tool:
+    Image|endswith:
+      - '\net.exe'
+      - '\net1.exe'
+      - '\sc.exe'
+      - '\taskkill.exe'
+  selection_action:
+    CommandLine|contains:
+      - 'stop'
+      - 'config'
+      - '/im'
+      - '/f'
+  selection_target:
+    CommandLine|contains:
+      - 'veeam'
+      - 'backup'
+      - 'acronis'
+      - 'sql'
+      - 'oracle'
+      - 'vss'
+      - 'sophos'
+      - 'defend'
+      - 'sentinel'
+      - 'crowdstrike'
+      - 'csfalcon'
+      - 'mbam'
+  condition: all of selection_*
+falsepositives:
+  - Maintenance windows for database or backup upgrades (correlate with change tickets)
+level: high
