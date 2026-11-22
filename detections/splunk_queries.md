@@ -2,12 +2,41 @@
 
 Converted with pySigma + pysigma-backend-splunk (Windows pipeline). Add your own `index=` / `sourcetype=` prefix (for example Sysmon Event ID 1 or Windows Security 4688 with command-line logging enabled).
 
+## Hospital Ransomware - Burst of Active Directory Discovery From One Account
+
+Source: `sigma/hosp_ransom_ad_discovery_burst.yml`
+
+```spl
+(Image="*\\nltest.exe" (CommandLine IN ("*/dclist*", "*/domain_trusts*"))) OR ((Image IN ("*\\net.exe", "*\\net1.exe")) (CommandLine IN ("*group \"domain admins\" /domain*", "*group \"enterprise admins\" /domain*", "*user /domain*", "*group /domain*"))) OR Image="*\\adfind.exe" OR CommandLine IN ("*objectcategory=computer*", "*objectcategory=person*", "*trustdmp*")
+
+| bin _time span=15m
+| stats count as event_count by _time User
+
+| search event_count >= 4
+```
+
+## Hospital Ransomware - Password-Protected Archive Created Before Exfiltration
+
+Source: `sigma/hosp_ransom_archive_with_password.yml`
+
+```spl
+(Image IN ("*\\7z.exe", "*\\7za.exe", "*\\7zr.exe", "*\\rar.exe", "*\\winrar.exe")) CommandLine="* a *" (CommandLine IN ("* -p*", "* -hp*"))
+```
+
 ## Hospital Ransomware - Windows Event Log Cleared via Command Line
 
 Source: `sigma/hosp_ransom_event_log_clearing.yml`
 
 ```spl
 (Image="*\\wevtutil.exe" (CommandLine IN ("* cl *", "* clear-log *"))) OR ((Image IN ("*\\powershell.exe", "*\\pwsh.exe")) (CommandLine IN ("*Clear-EventLog*", "*Remove-EventLog*", "*Limit-EventLog*")))
+```
+
+## Hospital Ransomware - Data Exfiltration to Cloud Storage with rclone
+
+Source: `sigma/hosp_ransom_exfil_rclone_cloud.yml`
+
+```spl
+Image="*\\rclone.exe" OR OriginalFileName="rclone.exe" OR Description="Rsync for cloud storage" OR ((CommandLine IN ("* copy *", "* sync *", "* move *")) (CommandLine IN ("*--transfers*", "*--multi-thread-streams*", "*--ignore-existing*", "*--no-check-certificate*", "*--max-age*")))
 ```
 
 ## Hospital Ransomware - Shadow Copy or Backup Catalog Deletion

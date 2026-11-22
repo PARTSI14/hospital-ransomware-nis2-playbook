@@ -38,7 +38,7 @@ Because the attack chain has not been disclosed, **this project does not invent 
 | [`playbook/nis2-reporting-timeline.md`](playbook/nis2-reporting-timeline.md) | NIS2 Art. 23 explained for responders, parallel GDPR clock, Germany (BSIG § 32) and Greece (Law 5160/2024) notes, and the Greiz illustration |
 | [`templates/`](templates) | Fill-in templates: early warning (24h), incident notification (72h), final report (1 month) |
 | [`layers/attack-layer.json`](layers/attack-layer.json) | ATT&CK Navigator layer: 105 techniques, scored by how many of 5 healthcare-targeting actors use them |
-| [`detections/sigma/`](detections/sigma) | 6 Sigma rules (5 single-event + 1 correlation) for pre-encryption activity |
+| [`detections/sigma/`](detections/sigma) | 9 Sigma files (7 single-event rules + 2 correlation rules) for the pre-encryption window: discovery, data theft and the last minutes before encryption |
 | [`detections/splunk_queries.md`](detections/splunk_queries.md) | The same rules converted to Splunk SPL with pySigma |
 | `hospital-ransomware-nis2-clock.png` | NIS2 deadlines on the Greiz timeline (illustration) |
 | `healthcare-ransomware-top-techniques.png` | Techniques shared by ≥3 of the 5 reference actors |
@@ -95,8 +95,13 @@ The highest-value moment to catch ransomware is **after** the attacker has domai
 | Backup, security or database services stopped | T1489, T1685 | high |
 | Windows event log cleared from the command line | T1685.005 | high |
 | Shell launched by the PsExec service | T1569.002, T1021.002 | high |
+| Burst of AD discovery commands from one account: 4+ in 15 min (correlation) | T1087.002, T1069.002, T1018 | high |
+| Data exfiltration to cloud storage with rclone | T1567.002 | high |
+| Password-protected archive created (7-Zip / WinRAR) | T1560.001 | medium |
 
-All rules pass pySigma validation and convert to Splunk SPL. The correlation rule is designed to trigger the network-wide **containment decision** in Phase 3 of the playbook.
+The last three rules cover the **double-extortion** phase: operators map the domain, then steal patient data before they encrypt. Catching them here is cheaper than catching encryption, and the exfiltration rule feeds the **GDPR Art. 33** decision in the playbook.
+
+All rules pass pySigma validation and convert to Splunk SPL. The shadow-copy correlation rule is designed to trigger the network-wide **containment decision** in Phase 3 of the playbook.
 
 ---
 

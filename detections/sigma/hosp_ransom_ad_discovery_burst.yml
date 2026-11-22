@@ -1,0 +1,63 @@
+title: Hospital Ransomware - Active Directory Discovery Command (Base)
+id: 9b1f4f9a-3c41-4d0a-9a8e-5f2b7c1d0e21
+name: hosp_ransom_ad_discovery_base
+status: experimental
+description: Base rule for the correlation below - single AD discovery commands, noisy on their own.
+author: Stelios Partsinevelos
+date: 2026-11-22
+tags:
+  - attack.discovery
+  - attack.t1087.002
+  - attack.t1069.002
+  - attack.t1018
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_nltest:
+    Image|endswith: '\nltest.exe'
+    CommandLine|contains:
+      - '/dclist'
+      - '/domain_trusts'
+  selection_net:
+    Image|endswith:
+      - '\net.exe'
+      - '\net1.exe'
+    CommandLine|contains:
+      - 'group "domain admins" /domain'
+      - 'group "enterprise admins" /domain'
+      - 'user /domain'
+      - 'group /domain'
+  selection_adfind:
+    - Image|endswith: '\adfind.exe'
+    - CommandLine|contains:
+        - 'objectcategory=computer'
+        - 'objectcategory=person'
+        - 'trustdmp'
+  condition: 1 of selection_*
+falsepositives:
+  - See correlation rule
+level: low
+---
+title: Hospital Ransomware - Burst of Active Directory Discovery From One Account
+id: fcc91d16-5888-4b7b-9f52-cf7569f7d309
+status: experimental
+description: |
+  Fires when one account runs four or more AD discovery commands within 15 minutes. Admins run single
+  commands; operators run a checklist (domain controllers, domain admins, trusts, all computers) right
+  after getting domain access, before moving laterally. Used by 3 of 5 reference actors
+  (T1087.002 Domain Account, T1018 Remote System Discovery; T1069.002 Domain Groups by 2).
+author: Stelios Partsinevelos
+date: 2026-11-22
+correlation:
+  type: event_count
+  rules:
+    - hosp_ransom_ad_discovery_base
+  group-by:
+    - User
+  timespan: 15m
+  condition:
+    gte: 4
+falsepositives:
+  - Identity or audit scripts (allow-list the service account)
+level: high
